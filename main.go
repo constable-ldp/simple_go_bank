@@ -16,7 +16,6 @@ const (
 )
 
 func main() {
-	var err error
 	conn, err := sql.Open(dbDriver, dbSource)
 	if err != nil {
 		log.Fatal("cannot connect to db", err)
