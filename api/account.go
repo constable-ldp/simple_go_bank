@@ -2,6 +2,7 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	db "example.com/m/v2/db/sqlc"
@@ -100,63 +101,57 @@ func (server *Server) listAccounts(ctx *gin.Context) {
 
 type updateUriRequest struct {
 	ID int64 `uri:"id" binding:"required,min=1"`
-  }
+}
    
-  type updateJsonRequest struct {
+type updateJsonRequest struct {
 	Balance int64 `json:"balance" binding:"required,min=0"`
-  }
+}
    
-  func (server *Server) updateAccount(ctx *gin.Context) {
+func (server *Server) updateAccount(ctx *gin.Context) {
 	var req updateJsonRequest
 	var id updateUriRequest
 	if err := ctx.ShouldBindUri(&id); err != nil {
-	  ctx.JSON(http.StatusBadRequest, errorResponse(err))
-	  return
+	  	ctx.JSON(http.StatusBadRequest, errorResponse(err))
+	  	return
 	}
    
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-	  ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-	  return
+	  	ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+	  	return
 	}
    
 	arg := db.UpdateAccountParams{
-	  Balance: req.Balance,
+		ID: id.ID,
+		Balance: req.Balance,
 	}
    
 	acc, err := server.store.UpdateAccount(ctx, arg)
 	if err != nil {
-	  ctx.JSON(http.StatusUnprocessableEntity, errorResponse(err))
-	  return
+	  	ctx.JSON(http.StatusUnprocessableEntity, errorResponse(err))
+	  	return
 	}
    
 	ctx.JSON(http.StatusOK, acc)
-  }
-// type updateAccountRequest struct {
-// 	ID int64 `uri:"id" binding:"required,min=1"`
-// 	Balance int64 `form:"balance" binding:"required,min=0"`
-// }
+}
 
-// func (server *Server) updateAccount(ctx *gin.Context) {
-// 	var req updateAccountRequest
-// 	if err := ctx.ShouldBindUri(req.ID); err != nil {
-// 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-// 		return
-// 	}
-// 	if err := ctx.ShouldBindQuery(req.Balance); err != nil {
-// 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-// 		return
-// 	}
-// 	fmt.Println(req)
+type deleteUriRequest struct {
+	ID int64 `uri:"id" binding:"required,min=1"`
+}
 
-// 	arg := db.UpdateAccountParams{
-// 		Balance:  req.Balance,
-// 	}
+func (server *Server) deleteAccount(ctx *gin.Context) {
+	var req deleteUriRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
 
-// 	accounts, err := server.store.UpdateAccount(ctx, arg)
-// 	if err != nil {
-// 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-// 		return
-// 	}
+	err := server.store.DeleteAccount(ctx, req.ID)
+	if err != nil {
+		ctx.JSON(http.StatusUnprocessableEntity, errorResponse(err))
+		return
+  	}
 
-// 	ctx.JSON(http.StatusOK, accounts)
-// }
+  	deleted_message := fmt.Sprintf("%s deleted", fmt.Sprint(req.ID))
+ 
+  	ctx.JSON(http.StatusOK, deleted_message)
+}
